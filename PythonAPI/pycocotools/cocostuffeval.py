@@ -3,7 +3,7 @@ __author__ = 'hcaesar'
 import numpy as np
 import datetime
 import time
-from cocostuffhelper import cocoSegmentationToSegmentationMap
+from .cocostuffhelper import cocoSegmentationToSegmentationMap
 
 class COCOStuffeval:
     # Internal functions for evaluating stuff segmentations against a ground-truth.
@@ -63,7 +63,7 @@ class COCOStuffeval:
         self.statsClass = {}                # Per-class results
         self.params = Params()              # Evaluation parameters
         self.params.imgIds = sorted(cocoGt.getImgIds()) # By default we use all images from the GT file
-        self.catIds = range(stuffStartId, stuffEndId+addOther+1) # Take into account all stuff
+        self.catIds = list(range(stuffStartId, stuffEndId+addOther+1)) # Take into account all stuff
                                                                  # classes and one 'other' class
 
     def evaluate(self):
@@ -76,12 +76,12 @@ class COCOStuffeval:
         # Reset eval and print message
         tic = time.time()
         imgIds = self.params.imgIds
-        print('Evaluating stuff segmentation on %d images and %d classes...' \
-            % (len(imgIds), len(self.catIds)))
+        print(('Evaluating stuff segmentation on %d images and %d classes...' \
+            % (len(imgIds), len(self.catIds))))
 
         # Check that all images in params occur in GT and results
         gtImgIds = sorted(set(self.cocoGt.getImgIds()))
-        resImgIds = sorted(set([a['image_id'] for a in self.cocoRes.anns.values()]))
+        resImgIds = sorted(set([a['image_id'] for a in list(self.cocoRes.anns.values())]))
         missingInGt = [p for p in imgIds if p not in gtImgIds]
         missingInRes = [p for p in imgIds if p not in resImgIds]
         if len(missingInGt) > 0:
@@ -94,7 +94,7 @@ class COCOStuffeval:
         confusion = np.zeros((labelCount, labelCount))
         for i, imgId in enumerate(imgIds):
             if i+1 == 1 or i+1 == len(imgIds) or (i+1) % 10 == 0:
-                print('Evaluating image %d of %d: %d' % (i+1, len(imgIds), imgId))
+                print(('Evaluating image %d of %d: %d' % (i+1, len(imgIds), imgId)))
             confusion = self._accumulateConfusion(self.cocoGt, self.cocoRes, confusion, imgId)
         self.confusion = confusion
 
@@ -106,7 +106,7 @@ class COCOStuffeval:
         }
 
         toc = time.time()
-        print('DONE (t={:0.2f}s).'.format(toc-tic))
+        print(('DONE (t={:0.2f}s).'.format(toc-tic)))
 
     def _accumulateConfusion(self, cocoGt, cocoRes, confusion, imgId):
         '''
@@ -198,18 +198,18 @@ class COCOStuffeval:
         '''
 
         # Retrieve supercategory mapping
-        supCats = [c['supercategory'] for c in self.cocoGt.cats.values()]
+        supCats = [c['supercategory'] for c in list(self.cocoGt.cats.values())]
         supCatsUn = sorted(set(supCats))
         keys = supCatsUn
-        vals = range(0, len(supCatsUn))
-        supCatMap = dict(zip(keys, vals))
+        vals = list(range(0, len(supCatsUn)))
+        supCatMap = dict(list(zip(keys, vals)))
         supCatIds = [supCatMap[s] for s in supCats]
         supCatCount = len(supCatsUn)
 
         # Compute confusion matrix for supercategories
         confusionSup = np.zeros((supCatCount, supCatCount))
-        for supCatIdA in xrange(0, supCatCount):
-            for supCatIdB in xrange(0, supCatCount):
+        for supCatIdA in range(0, supCatCount):
+            for supCatIdB in range(0, supCatCount):
                 curLeavesA = np.where([s == supCatIdA for s in supCatIds])[0] + self.stuffStartId - 1
                 curLeavesB = np.where([s == supCatIdB for s in supCatIds])[0] + self.stuffStartId - 1
                 confusionLeaves = confusion[curLeavesA, :]
@@ -266,7 +266,7 @@ class COCOStuffeval:
         :param val: the value of the metric
         '''
         iStr = ' {:<14} @[ classes={:>8s} ] = {:0.4f}'
-        print(iStr.format(titleStr, classStr, val))
+        print((iStr.format(titleStr, classStr, val)))
         return val
 
 class Params:
